@@ -66,6 +66,7 @@ class NTPClientZone {
     NTPClientZone(const char* poolServerName, int timeOffset);
     NTPClientZone(const char* poolServerName, int timeOffset, int updateInterval);
     NTPClientZone(const char* poolServerName, int timeOffset, int updateInterval, TimeChangeRule myDST, TimeChangeRule mySTD);
+    // NTPClientZone(const char* poolServerName, int timeOffset, int updateInterval, int address);
     
     /**
      * This should be called in the main loop of your application. By default an update from the NTP Server is only
@@ -101,12 +102,17 @@ class NTPClientZone {
      */
     unsigned long getRawTime();
 
+    /**
+     * @return time of utc
+     */
+     unsigned long getUtcTime();
+
     void setZones(TimeChangeRule dstStart, TimeChangeRule stdStart);
     time_t toLocal(time_t utc);
     time_t toLocal(time_t utc, TimeChangeRule **tcr);
     time_t toUTC(time_t local);
     boolean utcIsDST(time_t utc);
     boolean locIsDST(time_t local);
-    void readRules(int address);
-    void writeRules(int address);
+    // void readRules(int address);
+    // void writeRules(int address);
 };

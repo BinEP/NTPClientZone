@@ -49,6 +49,13 @@ NTPClientZone::NTPClientZone(const char* poolServerName, int timeOffset, int upd
   this->_updateInterval = updateInterval;
 }
 
+// NTPClientZone::NTPClientZone(const char* poolServerName, int timeOffset, int updateInterval, int address) {
+//   readRules(address);
+//   this->_timeOffset     = timeOffset;
+//   this->_poolServerName = poolServerName;
+//   this->_updateInterval = updateInterval;
+// }
+
 void NTPClientZone::setTimeOffset(int timeOffset) {
 	this->_timeOffset		= timeOffset;
 }
@@ -84,7 +91,7 @@ void NTPClientZone::forceUpdate() {
   unsigned long secsSince1900 = highWord << 16 | lowWord;
 
   this->_currentEpoc = secsSince1900 - SEVENZYYEARS;
-  this->_timeOffset += utcIsDST(_currentEpoc) * 60 * 60;
+  // this->_timeOffset += locIsDST(toLocal(_currentEpoc)) * 60 * 60;
 }
 
 void NTPClientZone::update() {
@@ -96,13 +103,17 @@ void NTPClientZone::update() {
 }
 
 unsigned long NTPClientZone::getRawTime() {
-  return this->_timeOffset + // User offset
+  return ((this->_timeOffset + locIsDST(toLocal(_currentEpoc))) * 60 * 60) + // User offset
          this->_currentEpoc + // Epoc returned by the NTP server
          ((millis() - this->_lastUpdate) / 1000); // Time since last update
 }
 
+unsigned long NTPClientZone::getUtcTime() {
+  return _currentEpoc + ((millis() - this->_lastUpdate) / 1000);
+}
+
 String NTPClientZone::getDay() {
-  return dayStrings[(_currentEpoc / 86400L) % 7];
+  return dayStrings[(getRawTime() / 86400L) % 7];
 }
 String NTPClientZone::getHours() {
   return String((this->getRawTime()  % 86400L) / 3600);
@@ -116,7 +127,7 @@ String NTPClientZone::getSeconds() {
 }
 
 float NTPClientZone::getDayNum() {
-  return (_currentEpoc / 86400L) % 7;
+  return (getRawTime() / 86400L) % 7;
 }
 float NTPClientZone::getHoursNum() {
   return (this->getRawTime()  % 86400L) / 3600;
@@ -315,5 +326,30 @@ time_t NTPClientZone::toTime_t(TimeChangeRule r, int yr)
     if (r.week == 0) t -= 7 * SECS_PER_DAY;    //back up a week if this is a "Last" rule
     return t;
 }
+
+
+/*----------------------------------------------------------------------*
+ * Read the daylight and standard time rules from EEPROM at       *
+ * the given address.                                                   *
+ *----------------------------------------------------------------------*/
+// void NTPClientZone::readRules(int address)
+// {
+//     EEPROM.begin(512);
+//     EEPROM.eeprom_read_block((void *) &_dst, (void *) address, sizeof(_dst));
+//     address += sizeof(_dst);
+//     EEPROM.eeprom_read_block((void *) &_std, (void *) address, sizeof(_std));
+// }
+
+/*----------------------------------------------------------------------*
+ * Write the daylight and standard time rules to EEPROM at        *
+ * the given address.                                                   *
+ *----------------------------------------------------------------------*/
+// void NTPClientZone::writeRules(int address)
+// {
+    // EEPROM.begin(512);
+    // eeprom_write_block((void *) &_dst, (void *) address, sizeof(_dst));
+    // address += sizeof(_dst);
+    // eeprom_write_block((void *) &_std, (void *) address, sizeof(_std));
+// }
 
 
